@@ -232,13 +232,10 @@ void BaseRealSenseNode::startPublishers(const std::vector<stream_profile>& profi
             else if (profile.stream_type() == RS2_STREAM_DEPTH)
                 _is_depth_enabled = true;
             std::stringstream image_raw, camera_info;
-            bool rectified_image = false;
-            if (sensor.rs2::sensor::is<rs2::depth_sensor>())
-                rectified_image = true;
 
             // adding "~/" to the topic name will add node namespace and node name to the topic
             // see "Private Namespace Substitution Character" section on https://design.ros2.org/articles/topic_and_service_names.html
-            image_raw << "~/" << stream_name << "/image_" << ((rectified_image)?"rect_":"") << "raw";
+            image_raw << "~/" << stream_name << "/image_raw";
             camera_info << "~/" << stream_name << "/camera_info";
 
             // We can use 2 types of publishers:
