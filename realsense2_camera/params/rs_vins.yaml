@@ -1,0 +1,60 @@
+/**/**:
+  ros__parameters:
+    camera_namespace: '$(var uav_name)'
+    camera_name: '$(var camera_name)'
+
+    serial_no: ''
+    usb_port_id: ''
+    device_type: ''
+    config_file: ''
+    json_file_path: ''
+
+    initial_reset: true
+
+    accelerate_gpu_with_glsl: false
+    rosbag_filename: ''
+
+    log_level: 'info' # [info, debug, warn, error or fatal]
+    output: screen
+
+    enable_color: false
+    rgb_camera:
+      color_profile: 640x480x60
+      color_format: 'RGB8'
+      enable_auto_exposure: true
+
+    enable_depth: false
+    enable_infra: false
+    enable_infra1: true
+    enable_infra2: true
+    depth_module:
+      depth_profile: 640x480x60
+      depth_format: 'Z16'
+      infra_profile: 640x480x60
+      infra_format: 'RGB8'
+      infra1_format: 'Y8'
+      infra2_format: 'Y8'
+      exposure: 8500
+      gain: 16
+      laser_power: 0.0
+      hdr_enabled: false
+      enable_auto_exposure: true
+      exposure:
+        1: 7500
+        2: 1
+      gain:
+        1: 16
+        2: 16
+
+      emitter_enabled: 2 # Disable IR emitter
+
+    enable_sync: false
+    enable_rgbd: false
+
+    enable_gyro: true
+    gyro_fps: 200
+
+    enable_accel: true
+    accel_fps: 100
+    
+    unite_imu_method: 2 # Available methods: 0 (none), 1 (copy) and 2 (linear interpolation)
