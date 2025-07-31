@@ -4,7 +4,7 @@ from launch import LaunchContext, LaunchDescription
 
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, TextSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, TextSubstitution, PythonExpression
 
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterFile
