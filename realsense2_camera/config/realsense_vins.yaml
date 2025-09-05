@@ -39,12 +39,12 @@
       laser_power: 0.0
       hdr_enabled: false
       enable_auto_exposure: true
-      exposure:
-        1: 7500
-        2: 1
-      gain:
-        1: 16
-        2: 16
+      # exposure:
+      #   1: 7500
+      #   2: 1
+      # gain:
+      #   1: 16
+      #   2: 16
 
       emitter_enabled: 2 # Disable IR emitter
 
@@ -56,5 +56,5 @@
 
     enable_accel: true
     accel_fps: 100
-    
+
     unite_imu_method: 2 # Available methods: 0 (none), 1 (copy) and 2 (linear interpolation)

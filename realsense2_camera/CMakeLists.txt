@@ -288,9 +288,9 @@ install(
   DESTINATION include
 )
 
-# Install params files
+# Install config files
 install(DIRECTORY 
-    params
+    config
     DESTINATION share/${PROJECT_NAME}
 )
 

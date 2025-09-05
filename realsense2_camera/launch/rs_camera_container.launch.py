@@ -3,20 +3,20 @@ import os
 import launch
 
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
-
+from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import (
     LaunchConfiguration,
-    PathJoinSubstitution,
     PythonExpression,
     TextSubstitution
-)
+    )
 
-from launch_ros.actions import Node
+from launch_ros.actions import ComposableNodeContainer, LoadComposableNodes, Node
+from launch_ros.descriptions import ComposableNode
 from launch_ros.parameter_descriptions import ParameterFile
-from launch_ros.substitutions import FindPackageShare
 
 
 def launch_setup(context: launch.LaunchContext, ld):
+    namespace = 'realsense2_camera'
 
     # #{ uav_name
 
@@ -32,6 +32,30 @@ def launch_setup(context: launch.LaunchContext, ld):
 
     # #}
 
+    # #{ standalone
+
+    standalone = LaunchConfiguration('standalone')
+
+    ld.add_action(DeclareLaunchArgument(
+        'standalone',
+        default_value='true',
+        description='Whether to start as a container or load into an existing container.'
+    ))
+
+    # #}
+
+    # #{ container_name
+
+    container_name = LaunchConfiguration('container_name')
+
+    ld.add_action(DeclareLaunchArgument(
+        'container_name',
+        default_value='',
+        description='Name of an existing container to load into (if standalone is false)'
+    ))
+
+    # #}
+
     # #{ use_sim_time
 
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -44,17 +68,25 @@ def launch_setup(context: launch.LaunchContext, ld):
 
     # #}
 
+    # #{ log_level
+
+    log_level = LaunchConfiguration('log_level')
+
+    ld.add_action(DeclareLaunchArgument(
+        'log_level',
+        default_value='info',
+        description='Log level.'
+    ))
+
+    # #}
+
     # #{ realsense_config
 
     realsense_config = LaunchConfiguration('realsense_config')
 
     ld.add_action(DeclareLaunchArgument(
         'realsense_config',
-        default_value=PathJoinSubstitution([
-            FindPackageShare('realsense2_camera'),
-            'config',
-            'realsense_vins.yaml'
-        ]),
+        default_value='',
         description='Path to the Realsense camera configuration file.'
     ))
 
@@ -62,31 +94,53 @@ def launch_setup(context: launch.LaunchContext, ld):
 
     # #{ realsense camera node
 
+    realsense_camera_node = ComposableNode(
+
+        package='realsense2_camera',
+        plugin='realsense2_camera::RealSenseNodeFactory',
+        namespace=uav_name,
+        name=camera_name,
+
+        parameters=[
+            ParameterFile(realsense_config, allow_substs=True),
+        ]
+    )
+
+    load_into_existing = LoadComposableNodes(
+        target_container=container_name,
+        composable_node_descriptions=[realsense_camera_node],
+        condition=UnlessCondition(standalone)
+    )
+
+    ld.add_action(load_into_existing)
+
+    # #}
+
+    # #{ standalone container
+
+    standalone_container = ComposableNodeContainer(
+        namespace=uav_name,
+        name=namespace+'_container',
+        package='rclcpp_components',
+        executable='component_container_mt',
+        output='screen',
+        arguments=['--ros-args', '--log-level', log_level],
+        composable_node_descriptions=[realsense_camera_node],
+        condition=IfCondition(standalone)
+    )
+
+    ld.add_action(standalone_container)
+
+    # #}
+
+    # #{ static transformer publisher node
+
     fcu_frame = _uav_name + '/fcu'
     fcu_frame_slashless = 'fcu_' + _uav_name
 
     realsense_frame = _uav_name + '/' + _camera_name + '/link'
     realsense_frame_slashless = _uav_name + '_' + _camera_name + '_link'
 
-    realsense_camera_node = Node(
-        package='realsense2_camera',
-        executable='realsense2_camera_node',
-        name=camera_name,
-        namespace=uav_name,
-        output='screen',
-        parameters=[
-            ParameterFile(realsense_config, allow_substs=True),
-            {'use_sim_time': use_sim_time}
-        ]
-    )
-
-    ld.add_action(realsense_camera_node)
-
-    # #}
-
-    # #{ static transformer publisher node
-
-    # TODO(anyone): how can I get the pose of the camera for each frame?
     fcu_to_realsense_tf_static_publisher_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
@@ -104,7 +158,7 @@ def launch_setup(context: launch.LaunchContext, ld):
             '--pitch', '0.0',
             '--roll', '0.0',
             '--frame-id', fcu_frame,
-            '--child-frame-id', realsense_frame  # NOTE: x500 frame
+            '--child-frame-id', realsense_frame
         ]
     )
 
