@@ -29,7 +29,7 @@ def launch_setup(context: LaunchContext):
         parameters=[ParameterFile(camera_params_file, allow_substs=True),
                     {'use_sim_time': use_sim_time}])
 
-    return realsense_camera_node
+    return [realsense_camera_node]
 
 
 def generate_launch_description():
