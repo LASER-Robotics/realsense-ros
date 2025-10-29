@@ -58,7 +58,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'camera_params_file',
             default_value=PathJoinSubstitution([FindPackageShare('realsense2_camera'),
-                                                'params', 'rs_vins.yaml']), # NOTE: we ONLY have this config available for now
+                                                'params', 'default.yaml']), # NOTE: we ONLY have this config available for now
             description='Full path to the file with the camera parameters.'))
 
     return LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])
