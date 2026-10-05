@@ -1,4 +1,4 @@
-// Copyright 2023 Intel Corporation. All Rights Reserved.
+// Copyright 2023 RealSense, Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -139,6 +139,19 @@ const std::string list_available_qos_strings()
         << "PARAMETERS" << "\n"
         << "SENSOR_DATA";
     return res.str();
+}
+
+std::string vectorToJsonString(const std::vector<uint8_t>& vec) {
+    std::ostringstream oss;
+    oss << "[";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        oss << static_cast<int>(vec[i]);
+        if (i < vec.size() - 1) {
+            oss << ",";
+        }
+    }
+    oss << "]";
+    return oss.str();
 }
 
 }

@@ -1,4 +1,4 @@
-# Copyright 2023 Intel Corporation. All Rights Reserved.
+# Copyright 2023 RealSense, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ class TestCamera_TestPointCloud(pytest_rs_utils.RsTestBaseClass):
             '''
             self.init_test("RsTest"+self.params['camera_name'])
             self.wait_for_node(self.params['camera_name'])
-            self.create_param_ifs(get_node_heirarchy(self.params))
+            self.create_service_client_ifs(get_node_heirarchy(self.params))
             ret = self.run_test(themes, timeout=10)
             assert ret[0], ret[1]
             ret = self.process_data(themes, False)

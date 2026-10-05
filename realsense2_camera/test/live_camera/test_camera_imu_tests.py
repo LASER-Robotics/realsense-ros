@@ -1,4 +1,4 @@
-# Copyright 2023 Intel Corporation. All Rights Reserved.
+# Copyright 2023 RealSense, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ class TestLiveCamera_TestMotionSensor(pytest_rs_utils.RsTestBaseClass):
         try:
             #initialize 
             self.init_test("RsTest"+params['camera_name'])
-            self.create_param_ifs(get_node_heirarchy(params))
+            self.create_service_client_ifs(get_node_heirarchy(params))
 
 
             #run with default params and check the data

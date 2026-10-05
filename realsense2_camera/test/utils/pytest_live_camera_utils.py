@@ -1,4 +1,4 @@
-# Copyright 2023 Intel Corporation. All Rights Reserved.
+# Copyright 2023 RealSense, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -198,11 +198,9 @@ def check_if_camera_connected(device_type, serial_no=None):
         name_line = long_data[index].split()
         if name_line[0] != "Intel":
             continue
-        if name_line[2] != device_type:
+        if name_line[2].casefold() != device_type.casefold():
             continue
-        if serial_no == None:
-            return True
-        if serial_no == name_line[3]:
+        if serial_no is None or serial_no == name_line[3]:
             return True
 
     return False

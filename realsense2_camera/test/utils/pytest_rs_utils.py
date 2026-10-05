@@ -1,4 +1,4 @@
-# Copyright 2023 Intel Corporation. All Rights Reserved.
+# Copyright 2023 RealSense, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import math
 from rcl_interfaces.msg import Parameter
 from rcl_interfaces.msg import ParameterValue
 from rcl_interfaces.srv import SetParameters, GetParameters, ListParameters
+from std_srvs.srv import Empty
 '''
 humble doesn't have the SetParametersResult and SetParameters_Response imported using 
 __init__.py. The below two lines can be used for iron and hopefully succeeding ROS2 versions
@@ -66,6 +67,7 @@ from sensor_msgs.msg import PointCloud2 as msg_PointCloud2
 from sensor_msgs.msg import CameraInfo as msg_CameraInfo
 from realsense2_camera_msgs.msg import Extrinsics as msg_Extrinsics
 from realsense2_camera_msgs.msg import Metadata as msg_Metadata
+from realsense2_camera_msgs.srv import DeviceInfo
 from sensor_msgs_py import point_cloud2 as pc2
 import tf2_ros
 
@@ -93,8 +95,8 @@ class RosbagManager(object):
         return cls.instance
     def init(self):
         self.rosbag_files = {
-                "outdoors_1color.bag":"https://librealsense.intel.com/rs-tests/TestData/outdoors_1color.bag",
-                "D435i_Depth_and_IMU_Stands_still.bag":"https://librealsense.intel.com/rs-tests/D435i_Depth_and_IMU_Stands_still.bag"
+                "outdoors_1color.bag":"https://librealsense.realsenseai.com/rs-tests/TestData/outdoors_1color.bag",
+                "D435i_Depth_and_IMU_Stands_still.bag":"https://librealsense.realsenseai.com/rs-tests/D435i_Depth_and_IMU_Stands_still.bag"
                 }
         self.rosbag_location = os.getenv("HOME") + "/realsense_records/" 
         print(self.rosbag_location)
@@ -384,13 +386,14 @@ def extrinsicsTest(data, gt_data):
 def metadatTest(data, gt_data):
     jdata = json.loads(data.json_data)
     gt_jdata = json.loads(gt_data.json_data)
-    if jdata['frame_number'] != gt_jdata['frame_number']:
+
+    if 'frame_number' in gt_jdata and jdata['frame_number'] != gt_jdata['frame_number']:
         msg = 'Frame no not matching: ' + str(jdata['frame_number']) + " and " + str(gt_jdata['frame_number'])
         return False, msg
-    if jdata['clock_domain'] != gt_jdata['clock_domain']:
+    if 'clock_domain' in gt_jdata and jdata['clock_domain'] != gt_jdata['clock_domain']:
         msg = 'clock_domain not matching: ' + str(jdata['clock_domain']) + " and " + str(gt_jdata['clock_domain'])
         return False, msg
-    if jdata['frame_timestamp'] != gt_jdata['frame_timestamp']:
+    if 'frame_timestamp' in gt_jdata and jdata['frame_timestamp'] != gt_jdata['frame_timestamp']:
         msg = 'frame_timestamp not matching: ' + str(jdata['frame_timestamp']) + " and " + str(gt_jdata['frame_timestamp'])
         return False, msg
     '''
@@ -401,9 +404,13 @@ def metadatTest(data, gt_data):
         msg = 'frame_counter not matching: ' + str(jdata['frame_counter']) + " and " + str(gt_jdata['frame_counter'])
         return False, msg
     '''
-    if jdata['time_of_arrival'] != gt_jdata['time_of_arrival']:
+    if 'time_of_arrival' in gt_jdata and jdata['time_of_arrival'] != gt_jdata['time_of_arrival']:
         msg = 'time_of_arrival not matching: ' + str(jdata['time_of_arrival']) + " and " + str(gt_jdata['time_of_arrival'])
         return False, msg
+    if 'actual_exposure' in gt_jdata and jdata['actual_exposure'] != gt_jdata['actual_exposure']:
+        msg = 'actual_exposure not matching: ' + str(jdata['actual_exposure']) + " and " + str(gt_jdata['actual_exposure'])
+        return False, msg
+
     return True, ""
     
 
@@ -783,16 +790,30 @@ class RsTestBaseClass():
         else:
             self.node.reset_data(topic)
 
-   
-
-    def create_param_ifs(self, camera_name):
+    def create_service_client_ifs(self, camera_name):
         self.set_param_if = self.node.create_client(SetParameters, camera_name + '/set_parameters')
         self.get_param_if = self.node.create_client(GetParameters, camera_name + '/get_parameters')
+        self.get_device_info = self.node.create_client(DeviceInfo, camera_name + '/device_info')
+        self.reset_if = self.node.create_client(Empty, camera_name + '/hw_reset')
         while not self.get_param_if.wait_for_service(timeout_sec=1.0):
             print('service not available, waiting again...') 
         while not self.set_param_if.wait_for_service(timeout_sec=1.0):
             print('service not available, waiting again...') 
+        while not self.get_device_info.wait_for_service(timeout_sec=1.0):
+            print('service not available, waiting again...')
+        while not self.reset_if.wait_for_service(timeout_sec=1.0):
+            print('hw_reset service not available, waiting again...')
 
+    def reset_device(self):
+        req = Empty.Request()
+        future = self.reset_if.call_async(req)
+        while rclpy.ok():
+            rclpy.spin_once(self.node)
+            if future.done():
+                return True
+        return False
+
+    
     def send_param(self, req):
         future = self.set_param_if.call_async(req)
         while rclpy.ok():
@@ -806,7 +827,7 @@ class RsTestBaseClass():
                     print("exception raised:")
                     print(e)
                     pass
-                return False
+        return False
 
     def get_param(self, req):
         future = self.get_param_if.call_async(req)
@@ -820,7 +841,7 @@ class RsTestBaseClass():
                     print("exception raised:")
                     print(e)
                     pass
-                return None
+        return None
 
     def set_string_param(self, param_name, param_value):
         req = SetParameters.Request()
@@ -833,7 +854,16 @@ class RsTestBaseClass():
         new_param_value = ParameterValue(type=ParameterType.PARAMETER_BOOL, bool_value=param_value)
         req.parameters = [Parameter(name=param_name, value=new_param_value)]
         return self.send_param(req)
-
+    
+    def get_bool_param(self, param_name):
+        req = GetParameters.Request()
+        req.names = [param_name]
+        value = self.get_param(req)
+        if (value == None) or (value.type != ParameterType.PARAMETER_BOOL):
+            return None
+        else:
+            return value.bool_value
+    
     def set_integer_param(self, param_name, param_value):
         req = SetParameters.Request()
         new_param_value = ParameterValue(type=ParameterType.PARAMETER_INTEGER, integer_value=param_value)
@@ -844,11 +874,25 @@ class RsTestBaseClass():
         req = GetParameters.Request()
         req.names = [param_name]
         value = self.get_param(req)
-        if (value == None) or (value.type == ParameterType.PARAMETER_NOT_SET):
+        if (value == None) or (value.type != ParameterType.PARAMETER_INTEGER):
             return None
         else:
             return value.integer_value
-
+    
+    def get_deviceinfo(self):
+        self.req = DeviceInfo.Request()
+        self.future = self.get_device_info.call_async(self.req)
+        while rclpy.ok():
+            rclpy.spin_once(self.node)
+            if self.future.done():
+                try:
+                    response = self.future.result()
+                    return response
+                except Exception as e:
+                    print("exception raised:")
+                    print(e)
+        return None
+    
     def spin_for_data(self,themes, timeout=5.0):
         '''
         timeout value varies depending upon the system, it needs to be more if
