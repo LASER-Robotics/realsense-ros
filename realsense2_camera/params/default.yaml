@@ -23,10 +23,10 @@
       color_format: 'RGB8'
       enable_auto_exposure: true
 
-    enable_depth: true
-    enable_infra: false
-    enable_infra1: false
-    enable_infra2: false
+    enable_depth: false
+    enable_infra: true
+    enable_infra1: true
+    enable_infra2: true
     depth_module:
       depth_profile: 640x480x60
       depth_format: 'Z16'
@@ -51,10 +51,10 @@
     enable_sync: false
     enable_rgbd: false
 
-    enable_gyro: false
+    enable_gyro: true
     gyro_fps: 200
 
-    enable_accel: false
+    enable_accel: true
     accel_fps: 100
     
-    unite_imu_method: 2 # Available methods: 0 (none), 1 (copy) and 2 (linear interpolation)
+    unite_imu_method: 0 # Available methods: 0 (none), 1 (copy) and 2 (linear interpolation)

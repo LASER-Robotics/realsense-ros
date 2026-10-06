@@ -278,7 +278,7 @@ else()
 endif()
 
 list(APPEND link_libraries ${OpenCV_LIBS})  # add OpenCV libs to link_libraries
-git merge --no-ff 4.58.1 -m "Merge upstream RealSense ROS 4.58.1"
+
 target_link_libraries(${PROJECT_NAME}
     ${link_libraries}
 )
