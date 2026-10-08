@@ -479,7 +479,8 @@ if [ "${INSTALLED_VERSION}" != "${LIBREALSENSE_VERSION}" ]; then
     exit 1
 fi
 
-if ! ldconfig -p | grep -q 'librealsense2\.so'; then
+# Consumir toda a saída evita SIGPIPE no ldconfig com pipefail ativo.
+if ! ldconfig -p | grep 'librealsense2\.so' > /dev/null; then
     echo "ERROR: librealsense2 was not found by ldconfig."
     exit 1
 fi
